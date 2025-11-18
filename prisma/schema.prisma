@@ -1,0 +1,144 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TipoUsuario {
+  MESTRE
+  PLAYER
+}
+
+enum SistemaRPG {
+  ORDEM_PARANORMAL
+  DND
+}
+
+model Usuario {
+  id          String       @id @default(uuid())
+  nome        String
+  email       String       @unique
+  senhaHash   String
+  tipo        TipoUsuario
+  campanhas   Campanha[]   @relation("CampanhaMestre")
+  personagens Personagem[]
+  participacoes CampanhaParticipante[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Campanha {
+  id         String     @id @default(uuid())
+  nome       String
+  descricao  String?
+  sistema    SistemaRPG
+  mestre     Usuario    @relation("CampanhaMestre", fields: [mestreId], references: [id])
+  mestreId   String
+  missoes    Missao[]
+  participantes CampanhaParticipante[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model CampanhaParticipante {
+  id          String    @id @default(uuid())
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  usuarioId   String
+  campanha    Campanha  @relation(fields: [campanhaId], references: [id])
+  campanhaId  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([usuarioId, campanhaId]) // Evita duplicação de vínculo
+}
+
+
+model Missao {
+  id          String       @id @default(uuid())
+  nome        String
+  descricao   String?
+  campanha    Campanha     @relation(fields: [campanhaId], references: [id])
+  campanhaId  String
+  personagens Personagem[]
+  locais      Local[]       // 👈 adicionado
+  monstros    Monstro[]     // 👈 adicionado
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Personagem {
+  id            String      @id @default(uuid())
+  nome          String
+  imagemUrl     String?
+  atributosJson Json?
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  usuarioId     String
+  missao        Missao      @relation(fields: [missaoId], references: [id])
+  missaoId      String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Local {
+  id         String            @id @default(uuid())
+  nome       String
+  descricao  String?
+  imagemUrl  String?
+  visivel    Boolean           @default(false)
+  missao     Missao            @relation(fields: [missaoId], references: [id])
+  missaoId   String
+  pontos     PontoInteresse[]
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+}
+
+model PontoInteresse {
+  id          String         @id @default(uuid())
+  nome        String
+  descricao   String?
+  imagemUrl   String?
+  local       Local          @relation(fields: [localId], references: [id])
+  localId     String
+  pistas      Pista[]
+  faixas      FaixaRolagem[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Pista {
+  id               String           @id @default(uuid())
+  descricao        String
+  imagemUrl        String?
+  visivel          Boolean          @default(false)
+  pontoInteresse   PontoInteresse   @relation(fields: [pontoInteresseId], references: [id])
+  pontoInteresseId String
+  faixas           FaixaRolagem[]   // 👈 adicionado
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Monstro {
+  id            String      @id @default(uuid())
+  nome          String
+  descricao     String?
+  imagemUrl     String?
+  atributosJson Json?
+  visivel       Boolean     @default(false)
+  missao        Missao      @relation(fields: [missaoId], references: [id])
+  missaoId      String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model FaixaRolagem {
+  id               String          @id @default(uuid())
+  rolagemMin       Int
+  rolagemMax       Int
+  pontoInteresse   PontoInteresse  @relation(fields: [pontoInteresseId], references: [id])
+  pontoInteresseId String
+  pista            Pista           @relation(fields: [pistaId], references: [id])
+  pistaId          String
+}
