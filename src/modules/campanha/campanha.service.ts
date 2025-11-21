@@ -2,16 +2,24 @@ import { prisma } from "../../prisma/client";
 import { HttpError } from "../../utils/http-error";
 import { SistemaRPG, TipoUsuario } from "@prisma/client";
 
-/**
- * Lista campanhas:
- * - Se for MESTRE → campanhas criadas por ele.
- * - Se for PLAYER → campanhas nas quais participa.
- */
 export async function listar(userId: string, tipo: TipoUsuario) {
     if (tipo === "MESTRE") {
         return prisma.campanha.findMany({
             where: { mestreId: userId },
-            include: { missoes: true },
+            include: { 
+                missoes: true,
+                mestre: { select: { id: true, nome: true } },
+                participantes: {
+                    include: {
+                        usuario: {
+                            select: {
+                                id: true,
+                                nome: true
+                            }
+                        }
+                    }
+                }
+            },
             orderBy: { createdAt: "desc" },
         });
     }
@@ -21,9 +29,23 @@ export async function listar(userId: string, tipo: TipoUsuario) {
             where: { usuarioId: userId },
             include: {
                 campanha: {
-                    include: { missoes: true },
-                },
+                    include: {
+                        missoes: true,
+                        mestre: { select: { id: true, nome: true } },
+                        participantes: {
+                            include: {
+                                usuario: {
+                                    select: {
+                                        id: true,
+                                        nome: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             },
+            orderBy: { createdAt: "desc" },
         });
         return participacoes.map((p) => p.campanha);
     }
@@ -31,9 +53,6 @@ export async function listar(userId: string, tipo: TipoUsuario) {
     throw new HttpError(403, "Tipo de usuário inválido");
 }
 
-/**
- * Cria uma nova campanha (somente Mestre)
- */
 export async function criar(mestreId: string, data: { nome: string; descricao?: string; sistema: SistemaRPG }) {
     const exists = await prisma.campanha.findFirst({
         where: { nome: data.nome, mestreId },
@@ -41,13 +60,17 @@ export async function criar(mestreId: string, data: { nome: string; descricao?: 
     if (exists) throw new HttpError(409, "Já existe uma campanha com esse nome");
 
     return prisma.campanha.create({
-        data: { ...data, mestreId },
+    data: { ...data, mestreId },
+        include: {
+            mestre: {
+                select: { id: true, nome: true }
+            },
+            missoes: true,
+            participantes: true
+        }
     });
 }
 
-/**
- * Adiciona um participante (Player) à campanha — Mestre apenas
- */
 export async function adicionarParticipante(mestreId: string, campanhaId: string, playerId: string) {
     const campanha = await prisma.campanha.findUnique({ where: { id: campanhaId } });
     if (!campanha) throw new HttpError(404, "Campanha não encontrada");
@@ -70,11 +93,6 @@ export async function adicionarParticipante(mestreId: string, campanhaId: string
     return { message: "Player adicionado à campanha" };
 }
 
-/**
- * Obtém uma campanha:
- * - Mestre pode ver suas campanhas.
- * - Player pode ver apenas se participa.
- */
 export async function obter(userId: string, tipo: TipoUsuario, campanhaId: string) {
     const camp = await prisma.campanha.findUnique({
         where: { id: campanhaId },
@@ -97,9 +115,6 @@ export async function obter(userId: string, tipo: TipoUsuario, campanhaId: strin
     return camp;
 }
 
-/**
- * Atualiza campanha (somente o Mestre dono)
- */
 export async function atualizar(mestreId: string, id: string, data: any) {
     const camp = await prisma.campanha.findUnique({ where: { id } });
     if (!camp) throw new HttpError(404, "Campanha não encontrada");
@@ -108,9 +123,6 @@ export async function atualizar(mestreId: string, id: string, data: any) {
     return prisma.campanha.update({ where: { id }, data });
 }
 
-/**
- * Remove campanha (somente o Mestre dono)
- */
 export async function remover(mestreId: string, id: string) {
     const camp = await prisma.campanha.findUnique({ where: { id } });
     if (!camp) throw new HttpError(404, "Campanha não encontrada");
