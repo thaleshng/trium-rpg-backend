@@ -93,13 +93,59 @@ export async function adicionarParticipante(mestreId: string, campanhaId: string
     return { message: "Player adicionado à campanha" };
 }
 
+export async function removerParticipante(mestreId: string, campanhaId: string, playerId: string) {
+    const campanha = await prisma.campanha.findUnique({ where: { id: campanhaId } });
+
+    if (!campanha) {
+        throw new HttpError(404, "Campanha não encontrada");
+    }
+
+    if (campanha.mestreId !== mestreId) {
+        throw new HttpError(403, "Sem permissão");
+    }
+
+    const vinculo = await prisma.campanhaParticipante.findFirst({
+        where: { campanhaId, usuarioId: playerId },
+    });
+
+    if (!vinculo) {
+        throw new HttpError(404, "Player não participa desta campanha");
+    }
+
+    await prisma.campanhaParticipante.delete({
+        where: { id: vinculo.id },
+    });
+}
+
+
 export async function obter(userId: string, tipo: TipoUsuario, campanhaId: string) {
     const camp = await prisma.campanha.findUnique({
         where: { id: campanhaId },
-        include: { missoes: true },
+        include: {
+            missoes: true,
+            mestre: {
+                select: {
+                    id: true,
+                    nome: true,
+                },
+            },
+            participantes: {
+                include: {
+                    usuario: {
+                        select: {
+                            id: true,
+                            nome: true,
+                            tipo: true,
+                        },
+                    },
+                },
+            },
+        },
     });
 
-    if (!camp) throw new HttpError(404, "Campanha não encontrada");
+    if (!camp) {
+        throw new HttpError(404, "Campanha não encontrada");
+    }
 
     if (tipo === "MESTRE" && camp.mestreId !== userId) {
         throw new HttpError(403, "Sem acesso à campanha");
@@ -109,7 +155,10 @@ export async function obter(userId: string, tipo: TipoUsuario, campanhaId: strin
         const participa = await prisma.campanhaParticipante.findFirst({
             where: { usuarioId: userId, campanhaId },
         });
-        if (!participa) throw new HttpError(403, "Você não participa desta campanha");
+
+        if (!participa) {
+            throw new HttpError(403, "Você não participa desta campanha");
+        }
     }
 
     return camp;
@@ -120,7 +169,16 @@ export async function atualizar(mestreId: string, id: string, data: any) {
     if (!camp) throw new HttpError(404, "Campanha não encontrada");
     if (camp.mestreId !== mestreId) throw new HttpError(403, "Sem acesso à campanha");
 
-    return prisma.campanha.update({ where: { id }, data });
+    if (!data.nome || data.nome.trim().length === 0) {
+        throw new HttpError(400, "O nome da campanha é obrigatório");
+    }
+
+    const payload: any = {};
+    if (data.nome !== undefined) payload.nome = data.nome.trim();
+    if (data.descricao !== undefined) payload.descricao = data.descricao;
+    if (data.sistema !== undefined) payload.sistema = data.sistema;
+
+    return prisma.campanha.update({ where: { id }, data: payload });
 }
 
 export async function remover(mestreId: string, id: string) {

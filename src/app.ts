@@ -16,10 +16,10 @@ import { localRouter } from "./modules/local/local.routes";
 import { pontoRouter } from "./modules/ponto/ponto.routes";
 import { pistaRouter } from "./modules/pista/pista.routes";
 import { faixaRouter } from "./modules/faixa/faixa.routes";
+import { usuarioRouter } from "./modules/usuarios/usuario.routes";
 
 export const app = express();
 
-// ⚠️ Ordem correta — o upload vem antes de qualquer parser
 app.use("/api/v1/uploads", uploadRouter);
 
 app.use(helmet());
@@ -27,13 +27,12 @@ app.use(cors());
 app.use(express.json());
 app.use(pinoHttp({ logger }));
 
-// servir arquivos
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-// outras rotas
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/usuarios", usuarioRouter);
 app.use("/api/v1/campanhas", campanhaRouter);
 app.use("/api/v1/missoes", missaoRouter);
 app.use("/api/v1/personagens", personagemRouter);
