@@ -57,16 +57,19 @@ model CampanhaParticipante {
 
 
 model Missao {
-  id          String       @id @default(uuid())
-  nome        String
-  descricao   String?
-  campanha    Campanha     @relation(fields: [campanhaId], references: [id])
-  campanhaId  String
+  id        String   @id @default(uuid())
+  nome      String
+  descricao String?
+  campanhaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visibilidadePersonagens Boolean @default(false)
+
+  campanha   Campanha   @relation(fields: [campanhaId], references: [id])
   personagens Personagem[]
-  locais      Local[]       // 👈 adicionado
-  monstros    Monstro[]     // 👈 adicionado
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  locais     Local[]
+  monstros   Monstro[]
 }
 
 model Personagem {
