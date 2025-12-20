@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/auth';
 import { requireRole } from '../../middlewares/rbac';
+import { uploadMapa } from "./mapa.multer";
 import * as ctrl from './local.controller';
 
 export const localRouter = Router();
@@ -16,3 +17,5 @@ localRouter.get('/:id', ctrl.obter);
 localRouter.post('/', requireRole('MESTRE'), ctrl.criar);
 localRouter.patch('/:id', requireRole('MESTRE'), ctrl.atualizar);
 localRouter.delete('/:id', requireRole('MESTRE'), ctrl.remover);
+localRouter.post("/:id/mapa", requireRole("MESTRE"), uploadMapa.single("mapa"), ctrl.uploadMapa);
+localRouter.delete("/:id/mapa", requireRole("MESTRE"), ctrl.removerMapa);

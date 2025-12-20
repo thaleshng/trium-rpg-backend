@@ -90,6 +90,7 @@ model Local {
   nome       String
   descricao  String?
   imagemUrl  String?
+  mapaUrl    String?
   visivel    Boolean           @default(false)
   missao     Missao            @relation(fields: [missaoId], references: [id])
   missaoId   String

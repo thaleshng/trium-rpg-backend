@@ -34,12 +34,32 @@ export const remover = async (req: Request, res: Response) => {
     res.status(204).send();
 };
 
-/**
- * 🔹 Novo: obter local pelo ID
- */
 export const obter = async (req: Request, res: Response) => {
     const auth = (req as any).auth;
     const id = req.params.id;
     const out = await svc.obter(auth.sub, auth.tipo, id);
+    res.json(out);
+};
+
+export const uploadMapa = async (req: Request, res: Response) => {
+    const auth = (req as any).auth;
+    const localId = req.params.id;
+
+    if (!req.file) {
+        return res.status(400).json({ message: "Mapa não enviado" });
+    }
+
+    const mapaUrl = `${req.protocol}://${req.get("host")}/uploads/mapas/locais/${req.file.filename}`;
+
+    const out = await svc.atualizarMapa(auth.sub, localId, mapaUrl);
+    res.json(out);
+};
+
+export const removerMapa = async (req: Request, res: Response) => {
+    const auth = (req as any).auth;
+    const localId = req.params.id;
+
+    const out = await svc.removerMapa(auth.sub, localId);
+
     res.json(out);
 };
