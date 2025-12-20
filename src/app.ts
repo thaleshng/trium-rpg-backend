@@ -22,7 +22,33 @@ export const app = express();
 
 app.use("/api/v1/uploads", uploadRouter);
 
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: [
+            "'self'",
+            "data:",
+            "blob:",
+            "http://localhost:8080",
+            "https://trium-rpg-backend.onrender.com"
+            ],
+            connectSrc: [
+            "'self'",
+            "http://localhost:8080",
+            "https://trium-rpg-backend.onrender.com"
+            ],
+        },
+        },
+
+        crossOriginResourcePolicy: {
+        policy: "cross-origin",
+        },
+    })
+    );
 app.use(cors());
 app.use(express.json());
 app.use(pinoHttp({ logger }));

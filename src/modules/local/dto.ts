@@ -5,6 +5,7 @@ export const CriarLocalDTO = z.object({
     nome: z.string().min(2),
     descricao: z.string().optional(),
     imagemUrl: z.string().optional(),
+    mapaUrl: z.string().optional(),
     visivel: z.boolean().default(false),
     missaoId: z.string().uuid()
 });
