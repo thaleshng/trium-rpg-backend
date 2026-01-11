@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as svc from './local.service';
 import { AtualizarLocalDTO, CriarLocalDTO } from './dto';
+import { uploadToR2 } from "../../utils/r2-upload";
 
 export const listarDaMissao = async (req: Request, res: Response) => {
     const auth = (req as any).auth;
@@ -49,7 +50,7 @@ export const uploadMapa = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Mapa não enviado" });
     }
 
-    const mapaUrl = `${req.protocol}://${req.get("host")}/uploads/mapas/locais/${req.file.filename}`;
+    const mapaUrl = await uploadToR2(req.file, "mapas/locais", localId);
 
     const out = await svc.atualizarMapa(auth.sub, localId, mapaUrl);
     res.json(out);

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { upload } from "./multer";
 import { requireAuth } from "../../middlewares/auth";
 import { requireRole } from "../../middlewares/rbac";
+import { uploadToR2 } from "../../utils/r2-upload";
 
 export const uploadRouter = Router();
 
@@ -10,18 +11,15 @@ uploadRouter.post(
     requireAuth,
     requireRole("MESTRE"),
     upload.single("file"),
-    (req, res) => {
-        console.log("Upload recebido:");
-        console.log("Body:", req.body);
-        console.log("File:", req.file);
-
+    async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: "Nenhum arquivo enviado" });
         }
 
-        const tipo = req.body?.tipo || "misc";
-        const url = `${req.protocol}://${req.get("host")}/uploads/${tipo}/${req.file.filename}`;
-        console.log("✅ Upload salvo em:", url);
+        const tipo = (req.body?.tipo || "misc").toString();
+
+        const url = await uploadToR2(req.file, `uploads/${tipo}`);
+
         res.status(201).json({ url });
     }
 );

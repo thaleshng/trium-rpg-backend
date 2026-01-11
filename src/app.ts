@@ -29,13 +29,7 @@ app.use(
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: [
-            "'self'",
-            "data:",
-            "blob:",
-            "http://localhost:8080",
-            "https://trium-rpg-backend.onrender.com"
-            ],
+            imgSrc: ["*"],
             connectSrc: [
             "'self'",
             "http://localhost:8080",
@@ -52,8 +46,6 @@ app.use(
 app.use(cors());
 app.use(express.json());
 app.use(pinoHttp({ logger }));
-
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
